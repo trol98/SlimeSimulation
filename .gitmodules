@@ -1,0 +1,8 @@
+[submodule "Dependencies/GLFW"]
+	path = Dependencies/GLFW
+	url = https://github.com/trol98/glfw
+	branch = master
+[submodule "SlimeSimulation/src/vendor/glm"]
+	path = SlimeSimulation/src/vendor/glm
+	url = https://github.com/g-truc/glm
+
