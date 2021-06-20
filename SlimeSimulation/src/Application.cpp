@@ -16,8 +16,8 @@ void processInput(GLFWwindow* window, double deltaTime);
 unsigned int loadTexture(char const* path);
 
 //window
-constexpr unsigned SCR_WIDTH = 1920, SCR_HEIGHT = 1440;
-//constexpr unsigned SCR_WIDTH = 800, SCR_HEIGHT = 600;
+//constexpr unsigned SCR_WIDTH = 1920, SCR_HEIGHT = 1440;
+constexpr unsigned SCR_WIDTH = 800, SCR_HEIGHT = 600;
 
 //camera
 Camera camera(glm::vec3(-8.0f, 7.0f, 11.0f));
@@ -126,11 +126,15 @@ int main()
         glMemoryBarrier( GL_ALL_BARRIER_BITS );
         */
 
+        computeShader.use();
 
-
-        glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glActiveTexture(GL_TEXTURE0);
+        //glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+        glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
         glDispatchCompute(1, 1, 1);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
@@ -243,15 +247,15 @@ unsigned int loadTexture(char const* path)
 
         // binding texture, loading data
         glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
         // generating mipmaps automaticly
         glGenerateMipmap(GL_TEXTURE_2D);
 
         // setting the parameters of the texture
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);//format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);//format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT); // GL_REPEAT
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT); // GL_REPEAT
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
     else
