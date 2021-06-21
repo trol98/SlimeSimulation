@@ -3,8 +3,10 @@
 
 #include "Camera.h"
 #include "Shader.h"
+#include "TextureHelper.h"
 
-#include "vendor/stb_image/stb_image.h"
+#include "vendor/glm/glm/glm.hpp"
+#include "vendor/glm/glm/gtc/matrix_transform.hpp"
 
 #include <iostream>
 
@@ -13,7 +15,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window, double deltaTime);
 
-unsigned int loadTexture(char const* path);
 
 //window
 //constexpr unsigned SCR_WIDTH = 1920, SCR_HEIGHT = 1440;
@@ -62,7 +63,7 @@ int main()
 
     Shader computeShader("SlimeSimulation/res/shaders/slimeCompute.glsl");
 
-    unsigned int textureBoard = loadTexture("SlimeSimulation/res/textures/wood.png");
+    unsigned int textureBoard = TextureHelper::loadEmptyTexture(SCR_WIDTH, SCR_HEIGHT, 4);
 
     float quadData[] =
     {
@@ -215,56 +216,4 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(yoffset);
-}
-
-unsigned int loadTexture(char const* path)
-{
-    unsigned int textureID;
-    glGenTextures(1, &textureID);
-
-    // loading the width, height, number of channels and the data of the texture
-    int width, height, numberChannels;
-    unsigned char* data = stbi_load(path, &width, &height, &numberChannels, 0);
-
-    // if texture loaded successfully
-    if (data)
-    {
-        GLenum format;
-        switch (numberChannels)
-        {
-        case 1:
-            format = GL_RED;
-            break;
-        case 3:
-            format = GL_RGB;
-            break;
-        case 4:
-            format = GL_RGBA;
-            break;
-        default:
-            format = GL_RGB;
-        }
-
-        // binding texture, loading data
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-
-        // generating mipmaps automaticly
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        // setting the parameters of the texture
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT); // GL_REPEAT
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, format == GL_RGBA ? GL_CLAMP_TO_EDGE : GL_REPEAT); // GL_REPEAT
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-    else
-    {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
-    }
-
-    // at last free the memory on the CPU side
-    stbi_image_free(data);
-
-    return textureID;
 }
