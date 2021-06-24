@@ -28,6 +28,11 @@ double lastX = SCR_WIDTH / 2.0;
 double lastY = SCR_HEIGHT / 2.0;
 bool firstMouse = true;
 
+float trailWeight = 1.0f;
+float decayRate = 1.0f;
+float diffuseRate = 1.0f;
+
+
 int main()
 {
     /* Initialize the library */
@@ -116,6 +121,7 @@ int main()
     computeShader.use();
     simpleShader.setInt("boardImage", 0);
 
+
     double deltaTime = 0.0f;
     double lastFrame = 0.0f;
     /* Loop until the user closes the window */
@@ -127,19 +133,14 @@ int main()
 
         processInput(window, deltaTime);
 
-        /*glBindBufferBase( GL_SHADER_STORAGE_BUFFER, 1, VerticesBuffer );
-
-        glBindImageTexture(0, HeightMap, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glUseProgram(ComputeProgram);
-
-        glUniform1i(glGetUniformLocation(ComputeProgram, "HeightMap"), 0);
-
-
-        glDispatchCompute(1, 1, 1 );
-        glMemoryBarrier( GL_ALL_BARRIER_BITS );
-        */
-
         computeShader.use();
+        computeShader.setFloat("deltaTime", deltaTime);
+        computeShader.setFloat("currentFrame", currentFrame);
+        computeShader.setFloat("trailWeight", trailWeight);
+        computeShader.setFloat("decayRate", decayRate);
+        computeShader.setFloat("diffuseRate", diffuseRate);
+        computeShader.setFloat("width", SCR_WIDTH);
+        computeShader.setFloat("height", SCR_HEIGHT);
 
         glActiveTexture(GL_TEXTURE0);
         //glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
