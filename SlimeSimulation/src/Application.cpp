@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "Shader.h"
 #include "TextureHelper.h"
+#include "AgentCreator.h"
 
 #include "vendor/glm/glm/glm.hpp"
 #include "vendor/glm/glm/gtc/matrix_transform.hpp"
@@ -18,7 +19,8 @@ void processInput(GLFWwindow* window, double deltaTime);
 
 //window
 //constexpr unsigned SCR_WIDTH = 1920, SCR_HEIGHT = 1440;
-constexpr unsigned SCR_WIDTH = 800, SCR_HEIGHT = 600;
+//constexpr unsigned SCR_WIDTH = 800, SCR_HEIGHT = 600;
+constexpr unsigned SCR_WIDTH = 800, SCR_HEIGHT = 800;
 
 //camera
 Camera camera(glm::vec3(-8.0f, 7.0f, 11.0f));
@@ -48,7 +50,7 @@ int main()
     glfwMakeContextCurrent(window);
 
     glfwSwapInterval(1);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -62,6 +64,16 @@ int main()
         "SlimeSimulation/res/shaders/simpleFragment.glsl");
 
     Shader computeShader("SlimeSimulation/res/shaders/slimeCompute.glsl");
+    
+    Agent* agents = AgentCreator::createRandom(50, SCR_WIDTH, SCR_HEIGHT);
+
+
+    GLuint ssbo;
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, 50 * sizeof(Agent), agents, GL_DYNAMIC_READ); //sizeof(data) only works for statically sized C/C++ arrays.
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo);
+    //glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
 
     unsigned int textureBoard = TextureHelper::loadEmptyTexture(SCR_WIDTH, SCR_HEIGHT, 4);
 
@@ -133,8 +145,8 @@ int main()
         //glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
         glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
         glDispatchCompute(1, 1, 1);
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        //glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
         
 
         /* Render here */
