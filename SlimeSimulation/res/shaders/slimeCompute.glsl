@@ -1,5 +1,5 @@
 #version 450 core
-layout( local_size_x = 50, local_size_y = 1, local_size_z = 1) in;
+layout( local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
 
 struct Agent {
     vec2 positon;
@@ -8,7 +8,7 @@ struct Agent {
 	int speciesIndex;
 };
 
-float moveSpeed = 20.0;
+float moveSpeed = 10.0;
 float turnSpeed = 2.0;
 float sensorAngleDegrees = 30.0;
 float sensorOffsetDst = 35.0;
@@ -25,9 +25,7 @@ layout (rgba32f)  uniform image2D boardImage;
 uniform float deltaTime;
 uniform float currentFrame;
 
-uniform float trailWeight;
-uniform float decayRate;
-uniform float diffuseRate;
+//uniform float trailWeight;
 uniform float width;
 uniform float height;
 
@@ -83,17 +81,17 @@ void main (void)
     }
 
 	//
-    if (gl_LocalInvocationID.x >= numAgents) 
+    if (gl_GlobalInvocationID.x >= numAgents) 
 	{
 		return;
 	}
 	//
 	//
-	Agent agent = Ag[gl_LocalInvocationID.x];
+	Agent agent = Ag[gl_GlobalInvocationID.x];
 	
 	vec2 pos = agent.positon;
 	
-	uint random = hash(uint(pos.y * width + pos.x + hash(uint(gl_LocalInvocationID.x + currentFrame * 100000))));
+	uint random = hash(uint(pos.y * width + pos.x + hash(uint(gl_GlobalInvocationID.x + currentFrame * 100000))));
 	
 	float sensorAngleRad = sensorAngleDegrees * (3.1415 / 180);
 	float weightForward = sense(agent,0);
@@ -106,18 +104,18 @@ void main (void)
 
 	// Continue in same direction
 	if (weightForward > weightLeft && weightForward > weightRight) {
-		Ag[gl_LocalInvocationID.x].angle += 0;
+		Ag[gl_GlobalInvocationID.x].angle += 0;
 	}
 	else if (weightForward < weightLeft && weightForward < weightRight) {
-		Ag[gl_LocalInvocationID.x].angle += (randomSteerStrength - 0.5) * 2 * turnSpeed * deltaTime;
+		Ag[gl_GlobalInvocationID.x].angle += (randomSteerStrength - 0.5) * 2 * turnSpeed * deltaTime;
 	}
 	// Turn right
 	else if (weightRight > weightLeft) {
-		Ag[gl_LocalInvocationID.x].angle -= randomSteerStrength * turnSpeed * deltaTime;
+		Ag[gl_GlobalInvocationID.x].angle -= randomSteerStrength * turnSpeed * deltaTime;
 	}
 	// Turn left
 	else if (weightLeft > weightRight) {
-		Ag[gl_LocalInvocationID.x].angle += randomSteerStrength * turnSpeed * deltaTime;
+		Ag[gl_GlobalInvocationID.x].angle += randomSteerStrength * turnSpeed * deltaTime;
 	}
 	vec2 direction = vec2(cos(agent.angle), sin(agent.angle));
 	vec2 newPos = agent.positon + direction * deltaTime * moveSpeed;
@@ -130,11 +128,11 @@ void main (void)
 
 		newPos.x = min(width-1,max(0, newPos.x));
 		newPos.y = min(height-1,max(0, newPos.y));
-		Ag[gl_LocalInvocationID.x].angle = randomAngle;
+		Ag[gl_GlobalInvocationID.x].angle = randomAngle;
 	}
 	else {
 		//vec4 oldTrail = TrailMap[int2(newPos)];
 		//TrailMap[ivec2(newPos)] = min(1, oldTrail + agent.speciesMask * trailWeight * deltaTime);
 	}
-	Ag[gl_LocalInvocationID.x].positon = newPos;
+	Ag[gl_GlobalInvocationID.x].positon = newPos;
 }
