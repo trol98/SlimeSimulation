@@ -18,8 +18,9 @@ void processInput(GLFWwindow* window, double deltaTime);
 
 
 //window
-constexpr unsigned SCR_WIDTH = 1920, SCR_HEIGHT = 1080;
+//constexpr unsigned SCR_WIDTH = 1920, SCR_HEIGHT = 1080;
 //constexpr unsigned SCR_WIDTH = 800, SCR_HEIGHT = 600;
+constexpr unsigned SCR_WIDTH = 320, SCR_HEIGHT = 180;
 
 //camera
 Camera camera(glm::vec3(-8.0f, 7.0f, 11.0f));
@@ -30,7 +31,7 @@ bool firstMouse = true;
 float trailWeight = 5.0f;
 float decayRate = 0.2f;
 float diffuseRate = 3.0f;
-unsigned numAgents = 500;
+unsigned numAgents = 250;
 
 
 int main()
@@ -72,7 +73,7 @@ int main()
     Shader diffComputeShader("SlimeSimulation/res/shaders/diffuseCompute.glsl");
 
     
-    Agent* agents = AgentCreator::createRandom(numAgents, SCR_WIDTH, SCR_HEIGHT);
+    Agent* agents = AgentCreator::createPoint(numAgents, SCR_WIDTH, SCR_HEIGHT);
 
 
     GLuint ssbo;
@@ -143,7 +144,7 @@ int main()
         glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
         computeShader.use();
-        computeShader.setFloat("deltaTime", deltaTime);
+        computeShader.setFloat("deltaTime", deltaTime * 2.5);
         computeShader.setFloat("currentFrame", currentFrame);
         computeShader.setFloat("trailWeight", trailWeight);
         computeShader.setFloat("decayRate", decayRate);
@@ -152,8 +153,8 @@ int main()
         computeShader.setFloat("height", SCR_HEIGHT);
 
         glDispatchCompute(numAgents, 1, 1);
-        //glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        //glMemoryBarrier(GL_ALL_BARRIER_BITS );
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 
         diffComputeShader.use();
         diffComputeShader.setFloat("deltaTime", deltaTime);
@@ -167,8 +168,8 @@ int main()
         glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
         glDispatchCompute(SCR_WIDTH, SCR_HEIGHT, 1);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);

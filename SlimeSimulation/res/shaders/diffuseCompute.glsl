@@ -9,6 +9,8 @@ uniform float deltaTime;
 
 layout (rgba32f)  uniform image2D boardImage;
 
+float evaporateSpeed = 0.3;
+
 void main()
 {
 	if(gl_GlobalInvocationID.x < 0 || gl_GlobalInvocationID.x >= uint(width) ||
@@ -19,6 +21,9 @@ void main()
 	}
 	vec4 sum = vec4(0.0);
 	vec4 originalCol = imageLoad(boardImage, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y));
+	// just subtract a little bit to give this disapearing trail effect
+	originalCol -= vec4(evaporateSpeed * deltaTime);
+
 	// 3x3 blur
 	for (int offsetX = -1; offsetX <= 1; offsetX++)
 	{

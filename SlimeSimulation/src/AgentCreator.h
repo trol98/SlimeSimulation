@@ -10,7 +10,7 @@
 
 class AgentCreator
 {
-public:
+private:
 	static glm::vec2 getPointUnitCircle()
 	{
 		// https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
@@ -19,7 +19,7 @@ public:
 		float r = u > 1 ? 2 - u : u;
 		return glm::vec2(r * cos(t), r * sin(t));
 	}
-
+public:
 	static Agent* createRandom(int numberAgent, int screenWidth, int screenHeight)
 	{
 		srand(time(nullptr));
@@ -30,6 +30,20 @@ public:
 			int randomY = rand() % screenHeight;
 
 			agentArray[i] = Agent(glm::vec2(randomX, randomY), glm::vec4(), 0.0f, 0);
+		}
+		return agentArray;
+	}
+	static Agent* createPoint(int numberAgent, int screenWidth, int screenHeight)
+	{
+		srand(time(nullptr));
+		Agent* agentArray = new Agent[numberAgent];
+		glm::vec2 centre(screenWidth / 2.0, screenHeight / 2.0);
+
+		for (int i = 0; i < numberAgent; i++)
+		{
+			float randomAngle = (rand() / std::numeric_limits<int>::max()) * glm::pi<float>() * 2;
+
+			agentArray[i] = Agent(centre, glm::vec4(), randomAngle, 0);
 		}
 		return agentArray;
 	}

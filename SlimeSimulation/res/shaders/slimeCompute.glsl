@@ -8,12 +8,12 @@ struct Agent {
 	int speciesIndex;
 };
 
-float moveSpeed = 10.0;
+float moveSpeed = 30.0;
 float turnSpeed = 2.0;
 float sensorAngleDegrees = 30.0;
 float sensorOffsetDst = 35.0;
 int sensorSize = 1;
-const int numAgents = 500;
+const int numAgents = 250;
 
 layout( std430, binding = 3 ) buffer Agents
 {
