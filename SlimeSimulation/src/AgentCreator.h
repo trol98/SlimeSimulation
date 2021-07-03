@@ -1,10 +1,11 @@
 #pragma once
-#include <vector>
-#include <memory>
+
+#include "vendor/glm/glm/glm.hpp"
+#include "vendor/glm/glm/gtc/matrix_transform.hpp"
+
 
 #include <cstdlib>
 #include <ctime>
-#include <climits>
 
 #include "Agent.h"
 
@@ -14,15 +15,14 @@ private:
 	static glm::vec2 getPointUnitCircle()
 	{
 		// https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
-		float t = 2 * glm::pi<float>() * (rand() / std::numeric_limits<int>::max());
-		float u = (rand() / std::numeric_limits<int>::max()) + (rand() / std::numeric_limits<int>::max());
+		float t = 2 * glm::pi<float>() * ((float)rand() / RAND_MAX);
+		float u = ((float)rand() / RAND_MAX) + ((float)rand() / RAND_MAX);
 		float r = u > 1 ? 2 - u : u;
 		return glm::vec2(r * cos(t), r * sin(t));
 	}
 public:
 	static Agent* createRandom(int numberAgent, int screenWidth, int screenHeight)
 	{
-		srand(time(nullptr));
 		Agent* agentArray = new Agent[numberAgent];
 		for (int i = 0; i < numberAgent; i++)
 		{
@@ -35,13 +35,12 @@ public:
 	}
 	static Agent* createPoint(int numberAgent, int screenWidth, int screenHeight)
 	{
-		srand(time(nullptr));
 		Agent* agentArray = new Agent[numberAgent];
 		glm::vec2 centre(screenWidth / 2.0, screenHeight / 2.0);
 
 		for (int i = 0; i < numberAgent; i++)
 		{
-			float randomAngle = (rand() / std::numeric_limits<int>::max()) * glm::pi<float>() * 2;
+			float randomAngle = ((float)rand() / RAND_MAX) * glm::pi<float>() * 2;
 
 			agentArray[i] = Agent(centre, glm::vec4(), randomAngle, 0);
 		}
@@ -49,11 +48,9 @@ public:
 	}
 	static Agent* createCircle(int numberAgent, int screenWidth, int screenHeight)
 	{
-		srand(time(nullptr));
-
 		Agent* agentArray = new Agent[numberAgent];
 
-		float randomAngle = (rand() / std::numeric_limits<int>::max()) * glm::pi<float>() * 2;
+		float randomAngle = ((float)rand() / RAND_MAX) * glm::pi<float>() * 2;
 		glm::vec2 centre(screenWidth / 2.0, screenHeight / 2.0);
 
 		for (int i = 0; i < numberAgent; i++)

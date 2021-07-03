@@ -1,7 +1,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Camera.h"
 #include "Shader.h"
 #include "TextureHelper.h"
 #include "AgentCreator.h"
@@ -11,27 +10,18 @@
 
 #include <iostream>
 
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window, double deltaTime);
 
-
 //window
 //constexpr unsigned SCR_WIDTH = 1920, SCR_HEIGHT = 1080;
-//constexpr unsigned SCR_WIDTH = 800, SCR_HEIGHT = 600;
-constexpr unsigned SCR_WIDTH = 320, SCR_HEIGHT = 180;
-
-//camera
-Camera camera(glm::vec3(-8.0f, 7.0f, 11.0f));
-double lastX = SCR_WIDTH / 2.0;
-double lastY = SCR_HEIGHT / 2.0;
-bool firstMouse = true;
+constexpr unsigned SCR_WIDTH = 800, SCR_HEIGHT = 600;
+//constexpr unsigned SCR_WIDTH = 320, SCR_HEIGHT = 180;
 
 float trailWeight = 5.0f;
-float decayRate = 0.2f;
+float decayRate = 0.0001f;
 float diffuseRate = 3.0f;
-unsigned numAgents = 250;
+unsigned numAgents = 500;
 
 
 int main()
@@ -39,6 +29,8 @@ int main()
     /* Initialize the library */
     if (!glfwInit())
         return -1;
+
+    srand(time(nullptr));
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
@@ -56,13 +48,10 @@ int main()
     glfwMakeContextCurrent(window);
 
     glfwSwapInterval(1);
-    //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwSetScrollCallback(window, scroll_callback);
-    glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cout << "Failed to initialize OpenGL context" << std::endl;
+        std::puts("Failed to initialize OpenGL context");
         return -1;
     }
     
@@ -73,7 +62,7 @@ int main()
     Shader diffComputeShader("SlimeSimulation/res/shaders/diffuseCompute.glsl");
 
     
-    Agent* agents = AgentCreator::createPoint(numAgents, SCR_WIDTH, SCR_HEIGHT);
+    Agent* agents = AgentCreator::createRandom(numAgents, SCR_WIDTH, SCR_HEIGHT);
 
 
     GLuint ssbo;
@@ -123,10 +112,18 @@ int main()
 
     computeShader.use();
     computeShader.setInt("boardImage", 0);
+    computeShader.setFloat("trailWeight", trailWeight);
+    computeShader.setFloat("decayRate", decayRate);
+    computeShader.setFloat("diffuseRate", diffuseRate);
+    computeShader.setFloat("width", SCR_WIDTH);
+    computeShader.setFloat("height", SCR_HEIGHT);
 
     diffComputeShader.use();
     diffComputeShader.setInt("boardImage", 0);
-
+    diffComputeShader.setFloat("width", SCR_WIDTH);
+    diffComputeShader.setFloat("height", SCR_HEIGHT);
+    diffComputeShader.setFloat("decayRate", decayRate);
+    diffComputeShader.setFloat("diffuseRate", diffuseRate);
 
     double deltaTime = 0.0f;
     double lastFrame = 0.0f;
@@ -140,36 +137,20 @@ int main()
         processInput(window, deltaTime);
 
         glActiveTexture(GL_TEXTURE0);
-        //glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+        glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
         computeShader.use();
-        computeShader.setFloat("deltaTime", deltaTime * 2.5);
+        computeShader.setFloat("deltaTime", deltaTime);
         computeShader.setFloat("currentFrame", currentFrame);
-        computeShader.setFloat("trailWeight", trailWeight);
-        computeShader.setFloat("decayRate", decayRate);
-        computeShader.setFloat("diffuseRate", diffuseRate);
-        computeShader.setFloat("width", SCR_WIDTH);
-        computeShader.setFloat("height", SCR_HEIGHT);
 
         glDispatchCompute(numAgents, 1, 1);
-        //glMemoryBarrier(GL_ALL_BARRIER_BITS );
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 
         diffComputeShader.use();
         diffComputeShader.setFloat("deltaTime", deltaTime);
-        diffComputeShader.setFloat("width", SCR_WIDTH);
-        diffComputeShader.setFloat("height", SCR_HEIGHT);
-        diffComputeShader.setFloat("decayRate", decayRate);
-        diffComputeShader.setFloat("diffuseRate", diffuseRate);
-
-        glActiveTexture(GL_TEXTURE0);
-        //glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-        glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
         glDispatchCompute(SCR_WIDTH, SCR_HEIGHT, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
 
         /* Render here */
         glClear(GL_COLOR_BUFFER_BIT);
@@ -179,14 +160,6 @@ int main()
         glBindVertexArray(quadVAO);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureBoard);
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
-        glm::mat4 model(1.0f);
-
-        simpleShader.setMat4("perspectiveMatrix", projection);
-        simpleShader.setMat4("viewMatrix", view);
-        simpleShader.setMat4("modelMatrix", model);
-
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -196,28 +169,10 @@ int main()
         /* Poll for and process events */
         glfwPollEvents();
     }
+    delete agents;
 
     glfwTerminate();
     return 0;
-}
-
-void processInput(GLFWwindow* window, double deltaTime)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(Camera_Movement::FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(Camera_Movement::BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(Camera_Movement::LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(Camera_Movement::RIGHT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-        camera.ProcessKeyboard(Camera_Movement::UP, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-        camera.ProcessKeyboard(Camera_Movement::DOWN, deltaTime);
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -227,27 +182,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+void processInput(GLFWwindow* window, double deltaTime)
 {
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    double xoffset = xpos - lastX;
-    double yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-    lastX = xpos;
-    lastY = ypos;
-
-    camera.ProcessMouseMovement(static_cast<float>(xoffset), static_cast<float>(yoffset));
-}
-
-// glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    camera.ProcessMouseScroll(yoffset);
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
 }

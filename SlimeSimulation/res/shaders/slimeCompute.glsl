@@ -8,12 +8,12 @@ struct Agent {
 	int speciesIndex;
 };
 
-float moveSpeed = 30.0;
-float turnSpeed = 2.0;
-float sensorAngleDegrees = 30.0;
-float sensorOffsetDst = 35.0;
-int sensorSize = 1;
-const int numAgents = 250;
+const float moveSpeed = 30.0;
+const float turnSpeed = 2.0;
+const float sensorAngleDegrees = 30.0;
+const float sensorOffsetDst = 35.0;
+const int sensorSize = 1;
+const int numAgents = 500;
 
 layout( std430, binding = 3 ) buffer Agents
 {
@@ -73,11 +73,7 @@ void main (void)
     for(int i = 0; i < numAgents; i++)
     {
         ivec2 pos = ivec2(Ag[i].positon);
-        //ivec2 pos = ivec2(0, 0);
-    
-
-		ivec2 npos = ivec2(pos.x, pos.y);
-		imageStore(boardImage, npos ,vec4(1.0, 1.0, 1.0, 1.0));
+		imageStore(boardImage, pos ,vec4(pos.x / width, pos.y / height, 1.0, 1.0));
     }
 
 	//

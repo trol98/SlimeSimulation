@@ -21,8 +21,6 @@ void main()
 	}
 	vec4 sum = vec4(0.0);
 	vec4 originalCol = imageLoad(boardImage, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y));
-	// just subtract a little bit to give this disapearing trail effect
-	originalCol -= vec4(evaporateSpeed * deltaTime);
 
 	// 3x3 blur
 	for (int offsetX = -1; offsetX <= 1; offsetX++)
@@ -31,6 +29,7 @@ void main()
 		{
 			int sampleX = int(min(width-1, max(0, gl_GlobalInvocationID.x +  offsetX)));
 			int sampleY = int(min(height-1, max(0, gl_GlobalInvocationID.y + offsetY)));
+			// 
 			sum += imageLoad(boardImage, ivec2(sampleX, sampleY));
 		}
 	}
@@ -38,9 +37,9 @@ void main()
 	vec4 blurredCol = sum / 9;
 	
 	float diffuseWeight = clamp(diffuseRate * deltaTime, 0.0, 1.0);
-	blurredCol = originalCol * (1 - diffuseWeight) + blurredCol * (diffuseWeight);
+	blurredCol = originalCol * (1 - diffuseWeight) + blurredCol * diffuseWeight;
 
 	//imageStore(boardImage, ivec2(gl_LocalInvocationID.x, gl_LocalInvocationID.y), vec4(max(0, int(blurredCol - decayRate * deltaTime))));
-	imageStore(boardImage, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y), blurredCol);
+	imageStore(boardImage, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y), blurredCol- vec4(evaporateSpeed * deltaTime));
 
 }
