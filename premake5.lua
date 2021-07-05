@@ -76,6 +76,7 @@ group "Dependencies"
 	include "SlimeSimulation/src/vendor/premake"
 	include "Dependencies/GLFW"
 	include "Dependencies/Glad"
+	include "SlimeSimulation/src/vendor/imgui"
 group ""
 
 

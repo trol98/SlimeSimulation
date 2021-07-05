@@ -153,14 +153,10 @@ int main()
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
-        glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
+        //glClear(GL_COLOR_BUFFER_BIT);
+        //glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
 
         simpleShader.use();
-        glBindVertexArray(quadVAO);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureBoard);
-
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         /* Swap front and back buffers */

@@ -40,6 +40,7 @@ void main()
 	blurredCol = originalCol * (1 - diffuseWeight) + blurredCol * diffuseWeight;
 
 	//imageStore(boardImage, ivec2(gl_LocalInvocationID.x, gl_LocalInvocationID.y), vec4(max(0, int(blurredCol - decayRate * deltaTime))));
-	imageStore(boardImage, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y), blurredCol- vec4(evaporateSpeed * deltaTime));
+	imageStore(boardImage, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y), blurredCol - vec4(decayRate * deltaTime));
+	//imageStore(boardImage, ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y), vec4(1.0,0.0,0.0,1.0));
 
 }

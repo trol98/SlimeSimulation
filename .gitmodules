@@ -5,4 +5,8 @@
 [submodule "SlimeSimulation/src/vendor/glm"]
 	path = SlimeSimulation/src/vendor/glm
 	url = https://github.com/g-truc/glm
+[submodule "SlimeSimulation/src/vendor/imgui"]
+	path = SlimeSimulation/src/vendor/imgui
+	url = https://github.com/trol98/imgui
+
 
