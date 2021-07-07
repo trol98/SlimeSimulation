@@ -19,7 +19,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 IncludeDir = {}
 IncludeDir["GLFW"] = "%{wks.location}/Dependencies/GLFW/include"
 IncludeDir["Glad"] = "%{wks.location}/Dependencies/Glad/include"
-
+IncludeDir["ImGui"] = "%{wks.location}/SlimeSimulation/ImGui/include"
 
 project "SlimeSimulation"
 	kind "ConsoleApp"
@@ -51,13 +51,15 @@ project "SlimeSimulation"
 	{
 		"vendor",
 		"%{IncludeDir.GLFW}",
-		"%{IncludeDir.Glad}"
+		"%{IncludeDir.Glad}",
+		"%{IncludeDir.ImGui}"
 	}
 
 	links
 	{
 		"GLFW",
 		"Glad",
+		"ImGui",
 		"OpenGL32.lib",
 		"User32.lib",
 		"gdi32.lib",
@@ -76,7 +78,7 @@ group "Dependencies"
 	include "SlimeSimulation/src/vendor/premake"
 	include "Dependencies/GLFW"
 	include "Dependencies/Glad"
-	include "SlimeSimulation/src/vendor/imgui"
+	include "SlimeSimulation/src/vendor/ImGui"
 group ""
 
 

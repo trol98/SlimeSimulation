@@ -81,3 +81,6 @@ tests/timeout
 tests/title
 tests/triangle-vulkan
 tests/windows
+
+#img
+.png
