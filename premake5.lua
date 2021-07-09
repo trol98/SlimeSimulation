@@ -19,7 +19,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 IncludeDir = {}
 IncludeDir["GLFW"] = "%{wks.location}/Dependencies/GLFW/include"
 IncludeDir["Glad"] = "%{wks.location}/Dependencies/Glad/include"
-IncludeDir["ImGui"] = "%{wks.location}/SlimeSimulation/ImGui/include"
+IncludeDir["ImGui"] = "%{wks.location}/SlimeSimulation/imgui/include"
 
 project "SlimeSimulation"
 	kind "ConsoleApp"
@@ -78,7 +78,7 @@ group "Dependencies"
 	include "SlimeSimulation/src/vendor/premake"
 	include "Dependencies/GLFW"
 	include "Dependencies/Glad"
-	include "SlimeSimulation/src/vendor/ImGui"
+	include "SlimeSimulation/src/vendor/imgui"
 group ""
 
 
