@@ -19,7 +19,9 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 IncludeDir = {}
 IncludeDir["GLFW"] = "%{wks.location}/Dependencies/GLFW/include"
 IncludeDir["Glad"] = "%{wks.location}/Dependencies/Glad/include"
-IncludeDir["ImGui"] = "%{wks.location}/SlimeSimulation/imgui/include"
+-- Notice no include folder after imgui path, becouse the include folder
+-- When it comes to imgui doesn't exist
+IncludeDir["ImGui"] = "%{wks.location}/SlimeSimulation/src/vendor/imgui"
 
 project "SlimeSimulation"
 	kind "ConsoleApp"
