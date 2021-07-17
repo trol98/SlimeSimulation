@@ -198,10 +198,6 @@ int main()
             ImGui::End();
         }
 
-        // Rendering
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
         glActiveTexture(GL_TEXTURE0);
         glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
@@ -225,6 +221,10 @@ int main()
         simpleShader.use();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+        // Rendering
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+       
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
 
