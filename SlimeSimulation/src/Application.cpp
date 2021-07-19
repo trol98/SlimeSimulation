@@ -3,7 +3,6 @@
 #include "vendor/imgui/imgui_impl_opengl3.h"
 #include "vendor/imgui/imgui_impl_glfw.h"
 
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -29,6 +28,11 @@ float decayRate = 0.0001f;
 float diffuseRate = 3.0f;
 unsigned numAgents = 500;
 
+float moveSpeed = 0.0;
+float turnSpeed = 2.0;
+float sensorAngleDegrees = 30.0;
+float sensorOffsetDst = 35.0;
+int   sensorSize = 1;
 
 int main()
 {
@@ -86,7 +90,7 @@ int main()
     Shader diffComputeShader("SlimeSimulation/res/shaders/diffuseCompute.glsl");
 
     
-    Agent* agents = AgentCreator::createRandom(numAgents, SCR_WIDTH, SCR_HEIGHT);
+    Agent* agents = AgentCreator::createCircle(numAgents, SCR_WIDTH, SCR_HEIGHT);
 
 
     GLuint ssbo;
@@ -131,14 +135,12 @@ int main()
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
+    // set uniform variables that will never change
     simpleShader.use();
     simpleShader.setInt("textureBoard", 0);
 
     computeShader.use();
     computeShader.setInt("boardImage", 0);
-    computeShader.setFloat("trailWeight", trailWeight);
-    computeShader.setFloat("decayRate", decayRate);
-    computeShader.setFloat("diffuseRate", diffuseRate);
     computeShader.setFloat("width", SCR_WIDTH);
     computeShader.setFloat("height", SCR_HEIGHT);
 
@@ -146,8 +148,6 @@ int main()
     diffComputeShader.setInt("boardImage", 0);
     diffComputeShader.setFloat("width", SCR_WIDTH);
     diffComputeShader.setFloat("height", SCR_HEIGHT);
-    diffComputeShader.setFloat("decayRate", decayRate);
-    diffComputeShader.setFloat("diffuseRate", diffuseRate);
 
     double deltaTime = 0.0f;
     double lastFrame = 0.0f;
@@ -162,39 +162,24 @@ int main()
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
+
         ImGui::NewFrame();
-        ImGui::ShowDemoWindow(&show_demo_window);
+        //ImGui::ShowDemoWindow(&show_demo_window);
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
             static float f = 0.0f;
             static int counter = 0;
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
-
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
+            ImGui::Begin("Hello, world!");
+            ImGui::DragFloat("decayRate", &decayRate,     0.0001f, 0.0f, 0.5f);
+            ImGui::DragFloat("diffuseRate", &diffuseRate, 0.01f, 0.0f, 5.0f);
+            ImGui::DragFloat("moveSpeed", &moveSpeed, 1.0f, 0.0f, 100.0f);
+            ImGui::DragFloat("turnSpeed", &turnSpeed, 0.01f, 0.0f, 10.0f);
+            ImGui::DragFloat("sensorAngleDegrees", &sensorAngleDegrees, 1.0f, 0.0f, 360.0f);
+            ImGui::DragFloat("sensorOffsetDst", &sensorOffsetDst, 1.0f, 0.0f, 100.0);
+            ImGui::DragInt("sensorSize", &sensorSize, 1, 0, 100);
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-            ImGui::End();
-        }
-
-        // 3. Show another simple window.
-        if (show_another_window)
-        {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
             ImGui::End();
         }
 
@@ -205,11 +190,19 @@ int main()
         computeShader.setFloat("deltaTime", deltaTime);
         computeShader.setFloat("currentFrame", currentFrame);
 
+        computeShader.setFloat("moveSpeed", moveSpeed);
+        computeShader.setFloat("turnSpeed", turnSpeed);
+        computeShader.setFloat("sensorAngleDegrees", sensorAngleDegrees);
+        computeShader.setFloat("sensorOffsetDst", sensorOffsetDst);
+        computeShader.setInt("sensorSize", sensorSize);
+
         glDispatchCompute(numAgents, 1, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 
         diffComputeShader.use();
         diffComputeShader.setFloat("deltaTime", deltaTime);
+        diffComputeShader.setFloat("decayRate", decayRate);
+        diffComputeShader.setFloat("diffuseRate", diffuseRate);
 
         glDispatchCompute(SCR_WIDTH, SCR_HEIGHT, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);

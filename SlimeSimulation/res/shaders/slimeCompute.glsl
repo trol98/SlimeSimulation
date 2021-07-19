@@ -1,6 +1,21 @@
 #version 450 core
 layout( local_size_x = 1024, local_size_y = 1, local_size_z = 1) in;
 
+uniform float deltaTime;
+uniform float currentFrame;
+uniform float width;
+uniform float height;
+
+uniform float moveSpeed;
+uniform float turnSpeed;
+uniform float sensorAngleDegrees;
+uniform float sensorOffsetDst;
+uniform int sensorSize;
+
+//uniform float trailWeight;
+
+const int numAgents = 500;
+
 struct Agent {
     vec2 positon;
 	vec4 mask;
@@ -8,27 +23,12 @@ struct Agent {
 	int speciesIndex;
 };
 
-const float moveSpeed = 30.0;
-const float turnSpeed = 2.0;
-const float sensorAngleDegrees = 30.0;
-const float sensorOffsetDst = 35.0;
-const int sensorSize = 1;
-const int numAgents = 500;
-
 layout( std430, binding = 3 ) buffer Agents
 {
     Agent Ag[numAgents];
 };
 
 layout (rgba32f)  uniform image2D boardImage;
-//
-uniform float deltaTime;
-uniform float currentFrame;
-
-//uniform float trailWeight;
-uniform float width;
-uniform float height;
-
 
 float sense(Agent agent, float sensorAngleOffset) {
 	float sensorAngle = agent.angle + sensorAngleOffset;
@@ -52,6 +52,7 @@ float sense(Agent agent, float sensorAngleOffset) {
 
 	return sum;
 }
+
 // www.cs.ubc.ca/~rbridson/docs/schechter-sca08-turbulence.pdf
 uint hash(uint state)
 {
@@ -70,19 +71,19 @@ float scaleToRange01(uint state)
 
 void main (void)
 {	
+	// drawing part
     for(int i = 0; i < numAgents; i++)
     {
         ivec2 pos = ivec2(Ag[i].positon);
-		imageStore(boardImage, pos ,vec4(pos.x / width, pos.y / height, 1.0, 1.0));
+		imageStore(boardImage, pos, vec4(pos.x / width, pos.y / height, 1.0, 1.0));
     }
 
-	//
     if (gl_GlobalInvocationID.x >= numAgents) 
 	{
 		return;
 	}
-	//
-	//
+
+	// calculating part
 	Agent agent = Ag[gl_GlobalInvocationID.x];
 	
 	vec2 pos = agent.positon;
@@ -90,7 +91,7 @@ void main (void)
 	uint random = hash(uint(pos.y * width + pos.x + hash(uint(gl_GlobalInvocationID.x + currentFrame * 100000))));
 	
 	float sensorAngleRad = sensorAngleDegrees * (3.1415 / 180);
-	float weightForward = sense(agent,0);
+	float weightForward = sense(agent, 0);
 	float weightLeft = sense(agent, sensorAngleRad);
 	float weightRight = sense(agent, -sensorAngleRad);
 
@@ -99,10 +100,10 @@ void main (void)
 	float turnSpeed = turnSpeed * 2 * 3.1415;
 
 	// Continue in same direction
-	if (weightForward > weightLeft && weightForward > weightRight) {
-		Ag[gl_GlobalInvocationID.x].angle += 0;
-	}
-	else if (weightForward < weightLeft && weightForward < weightRight) {
+	//if (weightForward > weightLeft && weightForward > weightRight) {
+		//Ag[gl_GlobalInvocationID.x].angle += 0;
+	//}
+	/*else*/if (weightForward < weightLeft && weightForward < weightRight) {
 		Ag[gl_GlobalInvocationID.x].angle += (randomSteerStrength - 0.5) * 2 * turnSpeed * deltaTime;
 	}
 	// Turn right
@@ -115,7 +116,6 @@ void main (void)
 	}
 	vec2 direction = vec2(cos(agent.angle), sin(agent.angle));
 	vec2 newPos = agent.positon + direction * deltaTime * moveSpeed;
-
 	
 	// Clamp position to map boundaries, and pick new random move dir if hit boundary
 	if (newPos.x < 0 || newPos.x >= width || newPos.y < 0 || newPos.y >= height) {
@@ -126,9 +126,9 @@ void main (void)
 		newPos.y = min(height-1,max(0, newPos.y));
 		Ag[gl_GlobalInvocationID.x].angle = randomAngle;
 	}
-	else {
+	//else {
 		//vec4 oldTrail = TrailMap[int2(newPos)];
 		//TrailMap[ivec2(newPos)] = min(1, oldTrail + agent.speciesMask * trailWeight * deltaTime);
-	}
+	//}
 	Ag[gl_GlobalInvocationID.x].positon = newPos;
 }
