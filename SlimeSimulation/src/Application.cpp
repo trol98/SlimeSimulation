@@ -84,13 +84,11 @@ int main()
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
     
     Shader simpleShader("SlimeSimulation/res/shaders/simpleVertex.glsl",
-        "SlimeSimulation/res/shaders/simpleFragment.glsl");
-
+                        "SlimeSimulation/res/shaders/simpleFragment.glsl");
     Shader computeShader("SlimeSimulation/res/shaders/slimeCompute.glsl");
     Shader diffComputeShader("SlimeSimulation/res/shaders/diffuseCompute.glsl");
-
     
-    Agent* agents = AgentCreator::createCircle(numAgents, SCR_WIDTH, SCR_HEIGHT);
+    Agent* agents = AgentCreator::createPoint(numAgents, SCR_WIDTH, SCR_HEIGHT);
 
 
     GLuint ssbo;

@@ -36,7 +36,7 @@ public:
 	static Agent* createPoint(int numberAgent, int screenWidth, int screenHeight)
 	{
 		Agent* agentArray = new Agent[numberAgent];
-		glm::vec2 centre(screenWidth / 2.0, screenHeight / 2.0);
+		glm::vec2 centre(screenWidth / 2.0f, screenHeight / 2.0f);
 
 		for (int i = 0; i < numberAgent; i++)
 		{

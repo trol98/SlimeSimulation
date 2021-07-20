@@ -75,7 +75,9 @@ void main (void)
     for(int i = 0; i < numAgents; i++)
     {
         ivec2 pos = ivec2(Ag[i].positon);
-		imageStore(boardImage, pos, vec4(pos.x / width, pos.y / height, 1.0, 1.0));
+		vec4 color = vec4(pos.x / width, pos.y / height, 1.0, 1.0);
+
+		imageStore(boardImage, pos, color);
     }
 
     if (gl_GlobalInvocationID.x >= numAgents) 
