@@ -19,14 +19,15 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window, double deltaTime);
 
 //window
-//constexpr unsigned SCR_WIDTH = 1920, SCR_HEIGHT = 1080;
-constexpr unsigned SCR_WIDTH = 800, SCR_HEIGHT = 600;
+constexpr unsigned SCR_WIDTH = 1920, SCR_HEIGHT = 1080;
+//constexpr unsigned SCR_WIDTH = 800, SCR_HEIGHT = 600;
 //constexpr unsigned SCR_WIDTH = 320, SCR_HEIGHT = 180;
 
 float trailWeight = 5.0f;
 float decayRate = 0.0001f;
 float diffuseRate = 3.0f;
-unsigned numAgents = 500;
+// max number of agents on my computer is 2^16 - 1
+unsigned numAgents = 65535;
 
 float moveSpeed = 0.0;
 float turnSpeed = 2.0;
@@ -94,9 +95,8 @@ int main()
     GLuint ssbo;
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, numAgents * sizeof(Agent), agents, GL_DYNAMIC_READ); //sizeof(data) only works for statically sized C/C++ arrays.
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, ssbo);
-    //glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
+    glBufferData(GL_SHADER_STORAGE_BUFFER, numAgents * sizeof(Agent), agents, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
 
     unsigned int textureBoard = TextureHelper::loadEmptyTexture(SCR_WIDTH, SCR_HEIGHT, 4);
 

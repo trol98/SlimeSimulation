@@ -13,8 +13,8 @@ uniform float sensorOffsetDst;
 uniform int sensorSize;
 
 //uniform float trailWeight;
-
-const int numAgents = 500;
+// max number of agents on my computer is 2^16 - 1
+const int numAgents = 65535;
 
 struct Agent {
     vec2 positon;
@@ -23,7 +23,7 @@ struct Agent {
 	int speciesIndex;
 };
 
-layout( std430, binding = 3 ) buffer Agents
+layout( std140, binding = 0 ) buffer Agents
 {
     Agent Ag[numAgents];
 };
@@ -39,11 +39,10 @@ float sense(Agent agent, float sensorAngleOffset) {
 	int sensorCentreY = int(sensorPos.y);
 
 	float sum = 0;
-
 	vec4 senseWeight = agent.mask * 2 - 1;
 
-	for (int offsetX = -sensorSize; offsetX <= sensorSize; offsetX ++) {
-		for (int offsetY = -sensorSize; offsetY <= sensorSize; offsetY ++) {
+	for (int offsetX = -sensorSize; offsetX <= sensorSize; offsetX++) {
+		for (int offsetY = -sensorSize; offsetY <= sensorSize; offsetY++) {
 			int sampleX = int(min(width - 1, max(0, sensorCentreX + offsetX)));
 			int sampleY = int(min(height - 1, max(0, sensorCentreY + offsetY)));
 			sum += dot(senseWeight, imageLoad(boardImage, ivec2(sampleX, sampleY)));
@@ -71,26 +70,24 @@ float scaleToRange01(uint state)
 
 void main (void)
 {	
-	// drawing part
-    for(int i = 0; i < numAgents; i++)
-    {
-        ivec2 pos = ivec2(Ag[i].positon);
-		vec4 color = vec4(pos.x / width, pos.y / height, 1.0, 1.0);
+	ivec3 globalID = ivec3(gl_GlobalInvocationID);
 
-		imageStore(boardImage, pos, color);
-    }
+    ivec2 pixelPos = ivec2(Ag[globalID.x].positon);
+	vec4 color = vec4(pixelPos.x / width, pixelPos.y / height, 1.0, 1.0);
 
-    if (gl_GlobalInvocationID.x >= numAgents) 
+	imageStore(boardImage, pixelPos, color);
+
+    if (globalID.x >= numAgents) 
 	{
 		return;
 	}
 
 	// calculating part
-	Agent agent = Ag[gl_GlobalInvocationID.x];
+	Agent agent = Ag[globalID.x];
 	
 	vec2 pos = agent.positon;
 	
-	uint random = hash(uint(pos.y * width + pos.x + hash(uint(gl_GlobalInvocationID.x + currentFrame * 100000))));
+	uint random = hash(uint(pos.y * width + pos.x + hash(uint(globalID.x + currentFrame * 100000))));
 	
 	float sensorAngleRad = sensorAngleDegrees * (3.1415 / 180);
 	float weightForward = sense(agent, 0);
@@ -106,15 +103,15 @@ void main (void)
 		//Ag[gl_GlobalInvocationID.x].angle += 0;
 	//}
 	/*else*/if (weightForward < weightLeft && weightForward < weightRight) {
-		Ag[gl_GlobalInvocationID.x].angle += (randomSteerStrength - 0.5) * 2 * turnSpeed * deltaTime;
+		Ag[globalID.x].angle += (randomSteerStrength - 0.5) * 2 * turnSpeed * deltaTime;
 	}
 	// Turn right
 	else if (weightRight > weightLeft) {
-		Ag[gl_GlobalInvocationID.x].angle -= randomSteerStrength * turnSpeed * deltaTime;
+		Ag[globalID.x].angle -= randomSteerStrength * turnSpeed * deltaTime;
 	}
 	// Turn left
 	else if (weightLeft > weightRight) {
-		Ag[gl_GlobalInvocationID.x].angle += randomSteerStrength * turnSpeed * deltaTime;
+		Ag[globalID.x].angle += randomSteerStrength * turnSpeed * deltaTime;
 	}
 	vec2 direction = vec2(cos(agent.angle), sin(agent.angle));
 	vec2 newPos = agent.positon + direction * deltaTime * moveSpeed;
