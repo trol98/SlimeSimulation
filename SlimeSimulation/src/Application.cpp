@@ -8,6 +8,7 @@
 
 #include "Shader.h"
 #include "TextureHelper.h"
+#include "Agent.h"
 #include "AgentCreator.h"
 
 #include "vendor/glm/glm/glm.hpp"
@@ -19,7 +20,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window, double deltaTime);
 
 //window
-constexpr unsigned SCR_WIDTH = 1920, SCR_HEIGHT = 1080;
+constexpr unsigned SCR_WIDTH = 1920, SCR_HEIGHT = 990;
 //constexpr unsigned SCR_WIDTH = 800, SCR_HEIGHT = 600;
 //constexpr unsigned SCR_WIDTH = 320, SCR_HEIGHT = 180;
 
@@ -28,6 +29,7 @@ float decayRate = 0.0001f;
 float diffuseRate = 3.0f;
 // max number of agents on my computer is 2^16 - 1
 unsigned numAgents = 65535;
+unsigned numSpecies = 3;
 
 float moveSpeed = 0.0;
 float turnSpeed = 2.0;
@@ -89,14 +91,60 @@ int main()
     Shader computeShader("SlimeSimulation/res/shaders/slimeCompute.glsl");
     Shader diffComputeShader("SlimeSimulation/res/shaders/diffuseCompute.glsl");
     
-    Agent* agents = AgentCreator::createPoint(numAgents, SCR_WIDTH, SCR_HEIGHT);
+    Agent* agents = AgentCreator::createAgents(numAgents, numSpecies, AgentMode::Circle,
+        SCR_WIDTH, SCR_HEIGHT);
+
+    SpeciesSettings* settings = new SpeciesSettings[numSpecies];
+    /*
+    float moveSpeed;
+	float turnSpeed;
+	float sensorAngle;
+	float sensorOffset;
+	int sensorSize;
+    */
+    settings[0] = {
+        14.0f,
+        14.0f,
+        30.0f,
+        24.0f,
+        3, 
+        1.0f,
+        0.0f,
+        0.0f
+    };
+    settings[1] = {
+    14.0f,
+    2.0f,
+    30.0f,
+    12.0f,
+    2,
+    0.0f,
+    1.0f,
+    0.0f
+    };
+    settings[2] = {
+    6.0f,
+    4.0f,
+    45.0f,
+    36.0f,
+    4,
+    0.0f,
+    0.0f,
+    1.0f
+    };
 
 
-    GLuint ssbo;
-    glGenBuffers(1, &ssbo);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    GLuint ssboAgents;
+    glGenBuffers(1, &ssboAgents);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboAgents);
     glBufferData(GL_SHADER_STORAGE_BUFFER, numAgents * sizeof(Agent), agents, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboAgents);
+
+    GLuint ssboSettings;
+    glGenBuffers(1, &ssboSettings);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboSettings);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, numSpecies * sizeof(SpeciesSettings), settings, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboSettings);
 
     unsigned int textureBoard = TextureHelper::loadEmptyTexture(SCR_WIDTH, SCR_HEIGHT, 4);
 

@@ -3,7 +3,6 @@
 #include "vendor/glm/glm/glm.hpp"
 #include "vendor/glm/glm/gtc/matrix_transform.hpp"
 
-
 #include <cstdlib>
 #include <ctime>
 
@@ -12,15 +11,75 @@
 class AgentCreator
 {
 private:
+
+	static float random01()
+	{
+		return ((float)rand() / RAND_MAX);
+	}
+
 	static glm::vec2 getPointUnitCircle()
 	{
 		// https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
-		float t = 2 * glm::pi<float>() * ((float)rand() / RAND_MAX);
-		float u = ((float)rand() / RAND_MAX) + ((float)rand() / RAND_MAX);
-		float r = u > 1 ? 2 - u : u;
-		return glm::vec2(r * cos(t), r * sin(t));
+		float t = random01() * glm::pi<float>() * 2.0f;
+		return glm::vec2(cos(t), sin(t));
 	}
 public:
+
+	static Agent* createAgents(unsigned numberAgents, unsigned numberSpecies, AgentMode mode,
+		unsigned width, unsigned height)
+	{
+		Agent* agentArray = new Agent[numberAgents];
+
+		glm::vec2 center(width / 2.0f, height / 2.0f);
+		float randomAngle = random01() * glm::pi<float>() * 2.0f;
+
+		glm::vec2 agentPos = center;
+		float angle = randomAngle;
+
+		float radius = 0.0f;
+
+
+		for (int i = 0; i < numberAgents; i++)
+		{
+			switch (mode)
+			{
+			case AgentMode::Random:
+				// nothing todo
+				break;
+			case AgentMode::Center:
+				agentPos = glm::vec2(rand() % width, rand() % height);
+				break;
+			case AgentMode::Circle:
+				radius = height * 0.15f;
+				agentPos = center + getPointUnitCircle() * radius;
+				break;
+			case AgentMode::InwardCircle:
+				radius = height * 0.5f;
+				agentPos = center + getPointUnitCircle() * radius;
+				glm::vec2 centerDirection = glm::normalize(center - agentPos);
+				angle = glm::atan(centerDirection.y, centerDirection.x);
+				break;
+			}
+
+			glm::ivec3 speciesMask;
+			int speciesIndex = 0;
+
+			if (numberSpecies == 1)
+			{
+				speciesMask = glm::ivec3(1, 1, 1);
+			}
+			else
+			{
+				int species = int(random01() * numberSpecies) + 1;
+				speciesIndex = species - 1;
+				speciesMask = glm::ivec3((species == 1) ? 1 : 0, (species == 2) ? 1 : 0, (species == 3) ? 1 : 0);
+			}
+			agentArray[i] = Agent(agentPos, speciesMask, angle, speciesIndex);
+		}
+		return agentArray;
+	}
+
+
 	static Agent* createRandom(int numberAgent, int screenWidth, int screenHeight)
 	{
 		Agent* agentArray = new Agent[numberAgent];
@@ -40,7 +99,7 @@ public:
 
 		for (int i = 0; i < numberAgent; i++)
 		{
-			float randomAngle = ((float)rand() / RAND_MAX) * glm::pi<float>() * 2;
+			float randomAngle = random01() * glm::pi<float>() * 2;
 
 			agentArray[i] = Agent(centre, glm::vec4(), randomAngle, 0);
 		}
@@ -50,7 +109,7 @@ public:
 	{
 		Agent* agentArray = new Agent[numberAgent];
 
-		float randomAngle = ((float)rand() / RAND_MAX) * glm::pi<float>() * 2;
+		float randomAngle = random01() * glm::pi<float>() * 2.0f;
 		glm::vec2 centre(screenWidth / 2.0, screenHeight / 2.0);
 
 		for (int i = 0; i < numberAgent; i++)

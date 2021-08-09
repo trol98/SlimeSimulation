@@ -15,6 +15,7 @@ uniform int sensorSize;
 //uniform float trailWeight;
 // max number of agents on my computer is 2^16 - 1
 const int numAgents = 65535;
+const int numSettings = 3;
 
 struct Agent {
     vec2 positon;
@@ -23,14 +24,32 @@ struct Agent {
 	int speciesIndex;
 };
 
+struct SpeciesSettings {
+	float moveSpeed;
+	float turnSpeed;
+
+	float sensorAngleDegrees;
+	float sensorOffsetDst;
+	float sensorSize;
+
+	float r;
+	float g;
+	float b;
+};
+
 layout( std140, binding = 0 ) buffer Agents
 {
     Agent Ag[numAgents];
 };
 
+layout( std140, binding = 1 ) buffer Setting
+{
+    SpeciesSettings specSettings[numSettings];
+};
+
 layout (rgba32f)  uniform image2D boardImage;
 
-float sense(Agent agent, float sensorAngleOffset) {
+float sense(Agent agent, SpeciesSettings settings, float sensorAngleOffset) {
 	float sensorAngle = agent.angle + sensorAngleOffset;
 	vec2 sensorDir = vec2(cos(sensorAngle), sin(sensorAngle));
 
@@ -40,6 +59,7 @@ float sense(Agent agent, float sensorAngleOffset) {
 
 	float sum = 0;
 	vec4 senseWeight = agent.mask * 2 - 1;
+	int sensorSize = int(settings.sensorSize);
 
 	for (int offsetX = -sensorSize; offsetX <= sensorSize; offsetX++) {
 		for (int offsetY = -sensorSize; offsetY <= sensorSize; offsetY++) {
@@ -48,7 +68,6 @@ float sense(Agent agent, float sensorAngleOffset) {
 			sum += dot(senseWeight, imageLoad(boardImage, ivec2(sampleX, sampleY)));
 		}
 	}
-
 	return sum;
 }
 
@@ -72,10 +91,7 @@ void main (void)
 {	
 	ivec3 globalID = ivec3(gl_GlobalInvocationID);
 
-    ivec2 pixelPos = ivec2(Ag[globalID.x].positon);
-	vec4 color = vec4(pixelPos.x / width, pixelPos.y / height, 1.0, 1.0);
 
-	imageStore(boardImage, pixelPos, color);
 
     if (globalID.x >= numAgents) 
 	{
@@ -84,19 +100,20 @@ void main (void)
 
 	// calculating part
 	Agent agent = Ag[globalID.x];
+	SpeciesSettings settings = specSettings[int(agent.speciesIndex)];
 	
 	vec2 pos = agent.positon;
 	
 	uint random = hash(uint(pos.y * width + pos.x + hash(uint(globalID.x + currentFrame * 100000))));
 	
 	float sensorAngleRad = sensorAngleDegrees * (3.1415 / 180);
-	float weightForward = sense(agent, 0);
-	float weightLeft = sense(agent, sensorAngleRad);
-	float weightRight = sense(agent, -sensorAngleRad);
+	float weightForward = sense(agent,settings, 0);
+	float weightLeft = sense(agent,settings, sensorAngleRad);
+	float weightRight = sense(agent,settings, -sensorAngleRad);
 
 
 	float randomSteerStrength = scaleToRange01(random);
-	float turnSpeed = turnSpeed * 2 * 3.1415;
+	float turnSpeed = settings.turnSpeed * 2 * 3.1415;
 
 	// Continue in same direction
 	//if (weightForward > weightLeft && weightForward > weightRight) {
@@ -113,8 +130,12 @@ void main (void)
 	else if (weightLeft > weightRight) {
 		Ag[globalID.x].angle += randomSteerStrength * turnSpeed * deltaTime;
 	}
+
+
+
+
 	vec2 direction = vec2(cos(agent.angle), sin(agent.angle));
-	vec2 newPos = agent.positon + direction * deltaTime * moveSpeed;
+	vec2 newPos = agent.positon + direction * deltaTime * settings.moveSpeed;
 	
 	// Clamp position to map boundaries, and pick new random move dir if hit boundary
 	if (newPos.x < 0 || newPos.x >= width || newPos.y < 0 || newPos.y >= height) {
@@ -123,11 +144,16 @@ void main (void)
 
 		newPos.x = min(width-1,max(0, newPos.x));
 		newPos.y = min(height-1,max(0, newPos.y));
-		Ag[gl_GlobalInvocationID.x].angle = randomAngle;
+		Ag[globalID.x].angle = randomAngle;
 	}
 	//else {
-		//vec4 oldTrail = TrailMap[int2(newPos)];
-		//TrailMap[ivec2(newPos)] = min(1, oldTrail + agent.speciesMask * trailWeight * deltaTime);
+		
 	//}
-	Ag[gl_GlobalInvocationID.x].positon = newPos;
+	Ag[globalID.x].positon = newPos;
+
+	ivec2 pixelPos = ivec2(Ag[globalID.x].positon);
+
+	vec4 color = vec4(settings.r, settings.g, settings.b, 1.0);
+
+	imageStore(boardImage, pixelPos, color);
 }
