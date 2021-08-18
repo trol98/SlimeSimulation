@@ -6,11 +6,11 @@ uniform float currentFrame;
 uniform float width;
 uniform float height;
 
-uniform float moveSpeed;
-uniform float turnSpeed;
-uniform float sensorAngleDegrees;
-uniform float sensorOffsetDst;
-uniform int sensorSize;
+//uniform float moveSpeed;
+//uniform float turnSpeed;
+//uniform float sensorAngleDegrees;
+//uniform float sensorOffsetDst;
+//uniform int sensorSize;
 
 //uniform float trailWeight;
 // max number of agents on my computer is 2^16 - 1
@@ -42,18 +42,20 @@ layout( std140, binding = 0 ) buffer Agents
     Agent Ag[numAgents];
 };
 
-layout( std140, binding = 1 ) buffer Setting
+layout( std140, binding = 1 ) buffer Spec
 {
     SpeciesSettings specSettings[numSettings];
 };
 
+//uniform SpeciesSettings specSettings[numSettings];
+
 layout (rgba32f)  uniform image2D boardImage;
 
 float sense(Agent agent, SpeciesSettings settings, float sensorAngleOffset) {
-	float sensorAngle = agent.angle + sensorAngleOffset;
+	float sensorAngle = agent.angle + settings.sensorAngleDegrees;
 	vec2 sensorDir = vec2(cos(sensorAngle), sin(sensorAngle));
 
-	vec2 sensorPos = agent.positon + sensorDir * sensorOffsetDst;
+	vec2 sensorPos = agent.positon + sensorDir * settings.sensorOffsetDst;
 	int sensorCentreX = int(sensorPos.x);
 	int sensorCentreY = int(sensorPos.y);
 
@@ -106,7 +108,7 @@ void main (void)
 	
 	uint random = hash(uint(pos.y * width + pos.x + hash(uint(globalID.x + currentFrame * 100000))));
 	
-	float sensorAngleRad = sensorAngleDegrees * (3.1415 / 180);
+	float sensorAngleRad = settings.sensorAngleDegrees * (3.1415 / 180);
 	float weightForward = sense(agent,settings, 0);
 	float weightLeft = sense(agent,settings, sensorAngleRad);
 	float weightRight = sense(agent,settings, -sensorAngleRad);
@@ -146,9 +148,7 @@ void main (void)
 		newPos.y = min(height-1,max(0, newPos.y));
 		Ag[globalID.x].angle = randomAngle;
 	}
-	//else {
-		
-	//}
+
 	Ag[globalID.x].positon = newPos;
 
 	ivec2 pixelPos = ivec2(Ag[globalID.x].positon);

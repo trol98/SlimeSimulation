@@ -28,14 +28,14 @@ float trailWeight = 5.0f;
 float decayRate = 0.0001f;
 float diffuseRate = 3.0f;
 // max number of agents on my computer is 2^16 - 1
-unsigned numAgents = 65535;
-unsigned numSpecies = 3;
+constexpr unsigned numAgents = 65535;
+constexpr unsigned numSpecies = 3;
 
-float moveSpeed = 0.0;
-float turnSpeed = 2.0;
-float sensorAngleDegrees = 30.0;
-float sensorOffsetDst = 35.0;
-int   sensorSize = 1;
+//float moveSpeed = 0.0;
+//float turnSpeed = 2.0;
+//float sensorAngleDegrees = 30.0;
+//float sensorOffsetDst = 35.0;
+//int   sensorSize = 1;
 
 int main()
 {
@@ -81,11 +81,6 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 450");
 
-    // Our state
-    bool show_demo_window = true;
-    bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    
     Shader simpleShader("SlimeSimulation/res/shaders/simpleVertex.glsl",
                         "SlimeSimulation/res/shaders/simpleFragment.glsl");
     Shader computeShader("SlimeSimulation/res/shaders/slimeCompute.glsl");
@@ -95,13 +90,7 @@ int main()
         SCR_WIDTH, SCR_HEIGHT);
 
     SpeciesSettings* settings = new SpeciesSettings[numSpecies];
-    /*
-    float moveSpeed;
-	float turnSpeed;
-	float sensorAngle;
-	float sensorOffset;
-	int sensorSize;
-    */
+
     settings[0] = {
         14.0f,
         14.0f,
@@ -122,6 +111,7 @@ int main()
     1.0f,
     0.0f
     };
+
     settings[2] = {
     6.0f,
     4.0f,
@@ -140,11 +130,11 @@ int main()
     glBufferData(GL_SHADER_STORAGE_BUFFER, numAgents * sizeof(Agent), agents, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboAgents);
 
-    GLuint ssboSettings;
-    glGenBuffers(1, &ssboSettings);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboSettings);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, numSpecies * sizeof(SpeciesSettings), settings, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboSettings);
+    GLuint ssboSpecs;
+    glGenBuffers(1, &ssboSpecs);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboSpecs);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, numSpecies * sizeof(SpeciesSettings), settings, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboSpecs);
 
     unsigned int textureBoard = TextureHelper::loadEmptyTexture(SCR_WIDTH, SCR_HEIGHT, 4);
 
@@ -194,7 +184,7 @@ int main()
     diffComputeShader.setInt("boardImage", 0);
     diffComputeShader.setFloat("width", SCR_WIDTH);
     diffComputeShader.setFloat("height", SCR_HEIGHT);
-
+    std::cout << sizeof(SpeciesSettings) << std::endl;
     double deltaTime = 0.0f;
     double lastFrame = 0.0f;
     /* Loop until the user closes the window */
@@ -211,36 +201,59 @@ int main()
 
         ImGui::NewFrame();
         //ImGui::ShowDemoWindow(&show_demo_window);
-
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
-            static float f = 0.0f;
-            static int counter = 0;
-
-            ImGui::Begin("Hello, world!");
+            ImGui::Begin("Overall settings!");
             ImGui::DragFloat("decayRate", &decayRate,     0.0001f, 0.0f, 0.5f);
             ImGui::DragFloat("diffuseRate", &diffuseRate, 0.01f, 0.0f, 5.0f);
-            ImGui::DragFloat("moveSpeed", &moveSpeed, 1.0f, 0.0f, 100.0f);
-            ImGui::DragFloat("turnSpeed", &turnSpeed, 0.01f, 0.0f, 10.0f);
-            ImGui::DragFloat("sensorAngleDegrees", &sensorAngleDegrees, 1.0f, 0.0f, 360.0f);
-            ImGui::DragFloat("sensorOffsetDst", &sensorOffsetDst, 1.0f, 0.0f, 100.0);
-            ImGui::DragInt("sensorSize", &sensorSize, 1, 0, 100);
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            //ImGui::DragFloat("moveSpeed", &moveSpeed, 1.0f, 0.0f, 100.0f);
+            //ImGui::DragFloat("turnSpeed", &turnSpeed, 0.01f, 0.0f, 10.0f);
+            //ImGui::DragFloat("sensorAngleDegrees", &sensorAngleDegrees, 1.0f, 0.0f, 360.0f);
+            //ImGui::DragFloat("sensorOffsetDst", &sensorOffsetDst, 1.0f, 0.0f, 100.0);
+            //ImGui::DragInt("sensorSize", &sensorSize, 1, 0, 100);
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+                1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
         }
 
+        {
+            ImGui::Begin("Species settings");
+            for (int i = 0; i < numSpecies; i++)
+            {
+                auto& sets = settings[i];
+                std::cout << &sets << std::endl;
+                ImGui::Text(("Species nr." + std::to_string(i)).c_str());
+                ImGui::DragFloat(("moveSpeed" + std::to_string(i)).c_str(), & (sets.moveSpeed), 1.0f, 0.0f, 100.0f);
+                ImGui::DragFloat(("turnSpeed" + std::to_string(i)).c_str(), & (sets.turnSpeed), 0.01f, 0.0f, 10.0f);
+                ImGui::DragFloat(("sensorAngleDegrees" + std::to_string(i)).c_str(), & (sets.sensorAngle), 1.0f, 0.0f, 360.0f);
+                ImGui::DragFloat(("sensorOffsetDst" + std::to_string(i)).c_str(), & (sets.sensorOffset), 1.0f, 0.0f, 100.0);
+                ImGui::DragInt(("sensorSize" + std::to_string(i)).c_str(), &(sets.sensorSize), 1, 0, 100);
+                // TODO: Add color choice
+            }
+            ImGui::End();
+        }
+
+        // "specSettings"
         glActiveTexture(GL_TEXTURE0);
         glBindImageTexture(0, textureBoard, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
         computeShader.use();
         computeShader.setFloat("deltaTime", deltaTime);
         computeShader.setFloat("currentFrame", currentFrame);
-
-        computeShader.setFloat("moveSpeed", moveSpeed);
-        computeShader.setFloat("turnSpeed", turnSpeed);
-        computeShader.setFloat("sensorAngleDegrees", sensorAngleDegrees);
-        computeShader.setFloat("sensorOffsetDst", sensorOffsetDst);
-        computeShader.setInt("sensorSize", sensorSize);
+        /*
+        for (int i = 0; i < numSpecies; i++)
+        {
+            computeShader.setFloat("specSettings[" + std::to_string(i) + "].moveSpeed", settings[i].moveSpeed);
+            computeShader.setFloat("specSettings[" + std::to_string(i) + "].turnSpeed", settings[i].turnSpeed);
+            computeShader.setFloat("specSettings[" + std::to_string(i) + "].sensorAngleDegrees", settings[i].sensorAngle);
+            computeShader.setFloat("specSettings[" + std::to_string(i) + "].sensorOffsetDst", settings[i].sensorOffset);
+            computeShader.setInt("specSettings[" + std::to_string(i) + "].sensorSize", settings[i].sensorSize);
+        }
+        */
+        //computeShader.setFloat("moveSpeed", moveSpeed);
+        //computeShader.setFloat("turnSpeed", turnSpeed);
+        //computeShader.setFloat("sensorAngleDegrees", sensorAngleDegrees);
+        //computeShader.setFloat("sensorOffsetDst", sensorOffsetDst);
+        //computeShader.setInt("sensorSize", sensorSize);
 
         glDispatchCompute(numAgents, 1, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
@@ -254,8 +267,6 @@ int main()
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         /* Render here */
-        //glClear(GL_COLOR_BUFFER_BIT);
-        //glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
 
         simpleShader.use();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -271,7 +282,8 @@ int main()
         glfwPollEvents();
 
     }
-    delete agents;
+    delete [] agents;
+    delete [] settings;
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
