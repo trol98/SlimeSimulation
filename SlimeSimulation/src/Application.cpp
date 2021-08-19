@@ -86,7 +86,7 @@ int main()
     Shader computeShader("SlimeSimulation/res/shaders/slimeCompute.glsl");
     Shader diffComputeShader("SlimeSimulation/res/shaders/diffuseCompute.glsl");
     
-    Agent* agents = AgentCreator::createAgents(numAgents, numSpecies, AgentMode::Circle,
+    Agent* agents = AgentCreator::createAgents(numAgents, numSpecies, AgentMode::InwardCircle,
         SCR_WIDTH, SCR_HEIGHT);
 
     SpeciesSettings* settings = new SpeciesSettings[numSpecies];
@@ -184,7 +184,6 @@ int main()
     diffComputeShader.setInt("boardImage", 0);
     diffComputeShader.setFloat("width", SCR_WIDTH);
     diffComputeShader.setFloat("height", SCR_HEIGHT);
-    std::cout << sizeof(SpeciesSettings) << std::endl;
     double deltaTime = 0.0f;
     double lastFrame = 0.0f;
     /* Loop until the user closes the window */
@@ -205,11 +204,6 @@ int main()
             ImGui::Begin("Overall settings!");
             ImGui::DragFloat("decayRate", &decayRate,     0.0001f, 0.0f, 0.5f);
             ImGui::DragFloat("diffuseRate", &diffuseRate, 0.01f, 0.0f, 5.0f);
-            //ImGui::DragFloat("moveSpeed", &moveSpeed, 1.0f, 0.0f, 100.0f);
-            //ImGui::DragFloat("turnSpeed", &turnSpeed, 0.01f, 0.0f, 10.0f);
-            //ImGui::DragFloat("sensorAngleDegrees", &sensorAngleDegrees, 1.0f, 0.0f, 360.0f);
-            //ImGui::DragFloat("sensorOffsetDst", &sensorOffsetDst, 1.0f, 0.0f, 100.0);
-            //ImGui::DragInt("sensorSize", &sensorSize, 1, 0, 100);
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
                 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             ImGui::End();
@@ -220,7 +214,6 @@ int main()
             for (int i = 0; i < numSpecies; i++)
             {
                 auto& sets = settings[i];
-                std::cout << &sets << std::endl;
                 ImGui::Text(("Species nr." + std::to_string(i)).c_str());
                 ImGui::DragFloat(("moveSpeed" + std::to_string(i)).c_str(), & (sets.moveSpeed), 1.0f, 0.0f, 100.0f);
                 ImGui::DragFloat(("turnSpeed" + std::to_string(i)).c_str(), & (sets.turnSpeed), 0.01f, 0.0f, 10.0f);
@@ -239,22 +232,21 @@ int main()
         computeShader.use();
         computeShader.setFloat("deltaTime", deltaTime);
         computeShader.setFloat("currentFrame", currentFrame);
-        /*
+        
         for (int i = 0; i < numSpecies; i++)
         {
-            computeShader.setFloat("specSettings[" + std::to_string(i) + "].moveSpeed", settings[i].moveSpeed);
-            computeShader.setFloat("specSettings[" + std::to_string(i) + "].turnSpeed", settings[i].turnSpeed);
-            computeShader.setFloat("specSettings[" + std::to_string(i) + "].sensorAngleDegrees", settings[i].sensorAngle);
-            computeShader.setFloat("specSettings[" + std::to_string(i) + "].sensorOffsetDst", settings[i].sensorOffset);
-            computeShader.setInt("specSettings[" + std::to_string(i) + "].sensorSize", settings[i].sensorSize);
-        }
-        */
-        //computeShader.setFloat("moveSpeed", moveSpeed);
-        //computeShader.setFloat("turnSpeed", turnSpeed);
-        //computeShader.setFloat("sensorAngleDegrees", sensorAngleDegrees);
-        //computeShader.setFloat("sensorOffsetDst", sensorOffsetDst);
-        //computeShader.setInt("sensorSize", sensorSize);
+            std::string name = "specSettings[" + std::to_string(i) + "].";
 
+            computeShader.setFloat(name + "moveSpeed", settings[i].moveSpeed);
+            computeShader.setFloat(name + "turnSpeed", settings[i].turnSpeed);
+            computeShader.setFloat(name + "sensorAngleDegrees", settings[i].sensorAngle);
+            computeShader.setFloat(name + "sensorOffsetDst", settings[i].sensorOffset);
+            computeShader.setInt(name + "sensorSize", settings[i].sensorSize);
+            computeShader.setFloat(name + "r", settings[i].r);
+            computeShader.setFloat(name + "g", settings[i].g);
+            computeShader.setFloat(name + "b", settings[i].b);
+        }
+        
         glDispatchCompute(numAgents, 1, 1);
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -271,7 +263,6 @@ int main()
         simpleShader.use();
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        // Rendering
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
        

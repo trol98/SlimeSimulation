@@ -39,7 +39,7 @@ public:
 		float radius = 0.0f;
 
 
-		for (int i = 0; i < numberAgents; i++)
+		for (unsigned i = 0; i < numberAgents; i++)
 		{
 			switch (mode)
 			{
@@ -61,20 +61,20 @@ public:
 				break;
 			}
 
-			glm::ivec3 speciesMask;
+			glm::vec4 speciesMask;
 			int speciesIndex = 0;
 
 			if (numberSpecies == 1)
 			{
-				speciesMask = glm::ivec3(1, 1, 1);
+				speciesMask = glm::vec4(1, 1, 1, 1);
 			}
 			else
 			{
 				int species = int(random01() * numberSpecies) + 1;
 				speciesIndex = species - 1;
-				speciesMask = glm::ivec3((species == 1) ? 1 : 0, (species == 2) ? 1 : 0, (species == 3) ? 1 : 0);
+				speciesMask = glm::vec4((species == 1) ? 1 : 0, (species == 2) ? 1 : 0, (species == 3) ? 1 : 0, 1);
 			}
-			agentArray[i] = Agent(agentPos, speciesMask, angle, speciesIndex);
+			agentArray[i] = { agentPos, speciesMask, angle, speciesIndex };
 		}
 		return agentArray;
 	}

@@ -30,7 +30,7 @@ struct SpeciesSettings {
 
 	float sensorAngleDegrees;
 	float sensorOffsetDst;
-	float sensorSize;
+	int sensorSize;
 
 	float r;
 	float g;
@@ -42,12 +42,12 @@ layout( std140, binding = 0 ) buffer Agents
     Agent Ag[numAgents];
 };
 
-layout( std140, binding = 1 ) buffer Spec
-{
-    SpeciesSettings specSettings[numSettings];
-};
+//layout( std140, binding = 1 ) buffer Spec
+//{
+//    SpeciesSettings specSettings[numSettings];
+//};
 
-//uniform SpeciesSettings specSettings[numSettings];
+uniform SpeciesSettings specSettings[3];
 
 layout (rgba32f)  uniform image2D boardImage;
 
@@ -89,11 +89,9 @@ float scaleToRange01(uint state)
     return state / 4294967295.0;
 }
 
-void main (void)
+void main(void)
 {	
 	ivec3 globalID = ivec3(gl_GlobalInvocationID);
-
-
 
     if (globalID.x >= numAgents) 
 	{
@@ -133,9 +131,6 @@ void main (void)
 		Ag[globalID.x].angle += randomSteerStrength * turnSpeed * deltaTime;
 	}
 
-
-
-
 	vec2 direction = vec2(cos(agent.angle), sin(agent.angle));
 	vec2 newPos = agent.positon + direction * deltaTime * settings.moveSpeed;
 	
@@ -144,16 +139,15 @@ void main (void)
 		random = hash(random);
 		float randomAngle = scaleToRange01(random) * 2 * 3.1415;
 
-		newPos.x = min(width-1,max(0, newPos.x));
-		newPos.y = min(height-1,max(0, newPos.y));
+		newPos.x = min(width - 1,max(0, newPos.x));
+		newPos.y = min(height - 1,max(0, newPos.y));
 		Ag[globalID.x].angle = randomAngle;
 	}
 
 	Ag[globalID.x].positon = newPos;
 
 	ivec2 pixelPos = ivec2(Ag[globalID.x].positon);
-
+	
 	vec4 color = vec4(settings.r, settings.g, settings.b, 1.0);
-
 	imageStore(boardImage, pixelPos, color);
 }
